@@ -113,34 +113,25 @@ define('INCLUDE_CHECK', true);
 require 'connect_'.$schoolCode.'.php';
 
 $status = false;
-$list = mysql_query("SELECT `pollResponse` FROM `d_pollresponses` WHERE `status` = 1");
+$list = mysql_query("SELECT `title`, `pollId`, `pollContent` FROM `d_polls` WHERE `isActive` = 1");
 
-
-
-while($pollresponses = mysql_fetch_assoc($list)){
-
-	 	$status = true;
-
-	 	$responseCount = mysql_fetch_assoc(mysql_query("SELECT COUNT(`pollId`) AS total FROM `d_pollresponses` WHERE `pollId`= '{$pollresponses['pollId']}'"));
-	 	$pollDetails = mysql_fetch_assoc(mysql_query("SELECT `pollContent`,`title` FROM `d_polls` WHERE `pollId`= '{$pollresponses['pollId']}'"));
-		$pollOptions = json_decode($pollDetails['pollContent']);
-		for ($i=0; $i<10; $i++) {
-			$count = mysql_fetch_assoc(mysql_query("SELECT COUNT(`pollId`) AS total FROM `d_pollresponses` WHERE `pollId`= '{$pollresponses['pollId']}' && `pollResponse`= '{$i}'"));
+while($result = mysql_fetch_assoc($list)){
+	$status = true;
+	$counts = "";
+	$responseCount = mysql_fetch_assoc(mysql_query("SELECT COUNT(`pollId`) AS total FROM `d_pollresponses` WHERE `pollId`= '{$result['pollId']}'"));
+	$pollOptions = json_decode($result['pollContent']);
+	for ($i=0; $i<10; $i++) {
+			$count = mysql_fetch_assoc(mysql_query("SELECT COUNT(`pollId`) AS total FROM `d_pollresponses` WHERE `pollId`= '{$result['pollId']}' && `pollResponse`= '{$i}'"));
 			$counts[] = array($count['total']);
 		}
-
-		$response[] = array(
-				"pollResponse"=> $pollresponses['pollResponse'],
+	$response[] = array(
 				"pollOptions"=> $pollOptions,
 				"counts"=> $counts,
-				"pollTitle"=> $pollDetails['title'],
+				"pollTitle"=> $result['title'],
 				"responseCount" =>$responseCount['total']
 		);
+
 }
-
-		
-
-		
 
 if($status){
 		$output = array(
@@ -156,7 +147,7 @@ if($status){
 if(!$status){
 	  $output = array(
 				"status" => false,
-				"error" => "No responses made for this poll so far",
+				"error" => "No active polls.",
 				"errorCode" => "402",
 				"posts" => ""
 			);
